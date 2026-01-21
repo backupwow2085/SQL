@@ -1,0 +1,48 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Set up ChromeDriver
+        uses: nanasess/setup-chromedriver@v2
+
+      - name: Container start
+        uses: hoverkraft-tech/compose-action@v2.0.1
+
+      - name: Waiting for container
+        run: sleep 30
+
+      - name: Run SUT
+        run: |
+          java -jar artifacts/app-deadline.jar \
+          -P:jdbc.url=jdbc:mysql://localhost:3306/app \
+          -P:jdbc.user=app \
+          -P:jdbc.password=pass &
+
+      - name: Waiting for SUT
+        run: sleep 5
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run tests
+        run: xvfb-run -a ./gradlew test -Dselenide.browser=chrome
+      - name: Install Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
