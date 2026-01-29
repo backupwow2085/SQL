@@ -1,66 +1,48 @@
 package ru.netology.test;
 
-import com.codeborne.selenide.Configuration;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.chrome.ChromeOptions;
+import org.junit.jupiter.api.TestMethodOrder;
 import ru.netology.data.DataHelper;
 import ru.netology.data.SQLHelper;
 import ru.netology.page.LoginPage;
 
-import java.util.Map;
-
-import static com.codeborne.selenide.Selenide.closeWebDriver;
 import static com.codeborne.selenide.Selenide.open;
-import static com.codeborne.selenide.Selenide.sleep;
-import static com.codeborne.selenide.WebDriverRunner.url;
-import static org.junit.jupiter.api.Assertions.fail;
 
+@TestMethodOrder(OrderAnnotation.class)
 class LoginTest {
-
-    @BeforeAll
-    static void setupBrowser() {
-        ChromeOptions options = new ChromeOptions();
-        options.setExperimentalOption("prefs", Map.of(
-                "credentials_enable_service", false,
-                "profile.password_manager_enabled", false,
-                "profile.password_manager_leak_detection", false
-        ));
-        Configuration.browserCapabilities = options;
-    }
 
     @BeforeEach
     void setUp() {
-        SQLHelper.cleanDatabase();
-        var user = DataHelper.getValidUser();
-        SQLHelper.createUser(user.getLogin(), user.getPassword());
-        SQLHelper.resetUserStatus(user.getLogin());
         open("http://localhost:9999");
     }
 
-    @AfterEach
-    void tearDown() {
+    @AfterAll
+    static void tearDownAll() {
         SQLHelper.cleanDatabase();
-        closeWebDriver();
     }
 
     @Test
+    @Order(1)
     void shouldLoginWithValidUser() {
         var user = DataHelper.getValidUser();
 
         var loginPage = new LoginPage();
         var verificationPage = loginPage.login(user.getLogin(), user.getPassword());
 
+        verificationPage.shouldBeOpened();
         var code = SQLHelper.getAuthCode(user.getLogin());
-        org.junit.jupiter.api.Assertions.assertNotNull(code, "Auth code was not generated");
+        org.junit.jupiter.api.Assertions.assertNotNull(code, "Код не был сгенерирован");
         var dashboardPage = verificationPage.verify(code);
 
         dashboardPage.shouldBeOpened();
     }
 
     @Test
+    @Order(2)
     void shouldBlockUserAfterThreeInvalidAttempts() {
         var userWithWrongPassword = DataHelper.getUserWithWrongPassword();
         var loginPage = new LoginPage();
@@ -70,10 +52,6 @@ class LoginTest {
         }
 
         var validUser = DataHelper.getValidUser();
-        loginPage.login(validUser.getLogin(), validUser.getPassword());
-        sleep(500);
-        if (url().contains("verification")) {
-            fail("Баг: после трёх неверных попыток открывается ввод кода подтверждения.");
-        }
+        loginPage.loginExpectBlocked(validUser.getLogin(), validUser.getPassword());
     }
 }

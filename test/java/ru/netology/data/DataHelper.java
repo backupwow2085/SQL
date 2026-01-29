@@ -1,6 +1,7 @@
 package ru.netology.data;
 
 import com.github.javafaker.Faker;
+import lombok.Value;
 
 public class DataHelper {
 
@@ -13,13 +14,6 @@ public class DataHelper {
         return new AuthInfo("vasya", "qwerty123");
     }
 
-    public static AuthInfo getInvalidUser() {
-        return new AuthInfo(
-                faker.name().username(),
-                faker.internet().password()
-        );
-    }
-
     public static AuthInfo getUserWithWrongPassword() {
         return new AuthInfo(
                 "vasya",
@@ -27,21 +21,9 @@ public class DataHelper {
         );
     }
 
+    @Value
     public static class AuthInfo {
-        private final String login;
-        private final String password;
-
-        public AuthInfo(String login, String password) {
-            this.login = login;
-            this.password = password;
-        }
-
-        public String getLogin() {
-            return login;
-        }
-
-        public String getPassword() {
-            return password;
-        }
+        String login;
+        String password;
     }
 }
