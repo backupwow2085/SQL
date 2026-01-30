@@ -25,14 +25,8 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    systemProperty 'selenide.headless', System.getProperty('selenide.headless', 'true')
     systemProperty 'chromeoptions.prefs', System.getProperty('chromeoptions.prefs', "profile.password_manager_leak_detection=false")
-}
-
-sourceSets {
-    test {
-        java.srcDirs = ['test/java']
-        resources.srcDirs = ['test/resources']
-    }
 }
 
 tasks.withType(JavaCompile) {
